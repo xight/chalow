@@ -983,7 +983,7 @@ sub make_month_page_list {
 		}
 		$month_page_list .= "</li>\n";
 	}
-    $month_page_list .= "</ul>\n";
+	$month_page_list .= "</ul>\n";
     return $month_page_list;
 }
 
@@ -1200,10 +1200,8 @@ sub write_latest_item_list_file {
 
 sub write_category_list_file {
     ### カテゴリ一覧
-#    return if ($output_cat_pages == 0 or $cat_page_cgi eq "");
-#    return if ($output_cat_pages == 0);
-
     my @lines = ();
+	push @lines, "<ul>";
 	foreach my $cat (sort keys %{$cl->{CAT}}) {
 		my $n = $cl->{CAT}->{$cat};
 		my $url;
@@ -1215,15 +1213,18 @@ sub write_category_list_file {
 			$url =~ s/%%CAT%%/urlencode($cat)/ge;
 			$url = $clog_url_pref.$url if ($url !~ /^http/);
 		}
-		push @lines, "- <a href=\"$url\">$cat</a> ($n)<br>";
+ 		my $temp_url = $url;
+ 		$temp_url =~ s/\.html$//;
+		push @lines, "<li><a href=\"$temp_url\">$cat</a> ($n)</li>";
     }
+	push @lines, "</ul>";
 
     my $ostr = join("\n", map {s/\'/&\#x27;/g; "document.writeln('".$_."');"}
 		 @lines);
 
     $category_list = join("\n", @lines);
     if ($output_cat_pages == 1) {
-	output_to_file("$outputdir/cl-cat.js", \$ostr);
+		output_to_file("$outputdir/cl-cat.js", \$ostr);
     }
 }
 
