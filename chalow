@@ -761,17 +761,24 @@ sub write_item_page {
 	    # 前後のページ
 	    my $ymdi_before;
 	    my $ymdi_after;
+	    my $header_text_before;
+	    my $header_text_after;
 	    if ($i > 1) {
-		$ymdi_before = $ymd."-".($i-1);
-	    } elsif ($idx < @day_list - 1) {
-		my $day_b = $day_list[$idx + 1];
-		$ymdi_before = $day_b."-".$cl->{all}->{$day_b}{curid};
+			$ymdi_before = $ymd."-".($i-1);
+			$header_text_before = $ent->{$i-1}{ho};
+		} elsif ($idx < @day_list - 1) {
+			my $day_b = $day_list[$idx + 1];
+			my $tmp_curid = $cl->{all}->{$day_b}{curid};
+			$ymdi_before = $day_b."-".$tmp_curid;
+			$header_text_before = $cl->{all}->{$day_b}{$tmp_curid}{ho};
 	    }
-	    if ($i != $ent->{curid}) {
-		$ymdi_after = $ymd."-".($i+1);
-	    } elsif ($idx > 0) {
-		my $day_a = $day_list[$idx - 1];
-		$ymdi_after = $day_a."-1";
+		if ($i != $ent->{curid}) {
+			$ymdi_after = $ymd."-".($i+1);
+			$header_text_after = $ent->{$i+1}{ho};
+		} elsif ($idx > 0) {
+			my $day_a = $day_list[$idx - 1];
+			$ymdi_after = $day_a."-1";
+			$header_text_after = $cl->{all}->{$day_a}{'1'}{ho};
 	    }
 
 	    ### ページの組み上げ
@@ -793,9 +800,12 @@ sub write_item_page {
 	    $t->param(back => $ymdi_before);
 	    $t->param(next => $ymdi_after);
 
-	    my $ccc = $item->{c}; $ccc =~ s!^<br>!!g;# ad hoc
+	    my $ccc = $item->{c}; $ccc =~ s!^<br />!!g;# ad hoc
 	    $t->param(content => $ccc);
 	    $t->param(header_text => $item->{ho});
+
+	    $t->param(header_text_before => $header_text_before);
+	    $t->param(header_text_after => $header_text_after);
 	    $t->param(header => $item->{h});
 	    $t->param(cat => $catstr);
 	    $t->param(author => $item->{a});
