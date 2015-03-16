@@ -1366,7 +1366,10 @@ sub escape_string {
 
 sub source_highlight {
     my ($lang,$source) = @_;
-	my $ret = qq(<pre><code class="$lang">$source</code></pre>);
+	$source =~ s/&/&amp;/g;
+	$source =~ s/</&lt;/g;
+	$source =~ s/>/&gt;/g;
+	my $ret = qq(<div class="code"><pre><code class="$lang">$source</code></pre></div>);
 }
 
 sub unescape_string {
@@ -1392,7 +1395,7 @@ sub unescape_string {
     $$strp =~ s|\x7\x13(\d+)\x3|eval($escaped_plugin{$1})|ge;
 
     ### ソースアンエスケープ - pre 追加
-	$$strp =~ s|\x6\x13(\d+)\x3|</p><div class="code"><pre>$escaped_src{$1}</pre></div><p>|g;
+	$$strp =~ s|\x6\x13(\d+)\x3|</p><div class="code"><pre><code class="nohighlight">$escaped_src{$1}</code></pre></div><p>|g;
 
 	### HTML アンエスケープ
 	$$strp =~ s|\x5\x13(\d+)\x3|$escaped_string{$1}|g;
