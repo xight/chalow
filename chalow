@@ -498,7 +498,7 @@ sub okikae {
     s!^\-{4}!<hr>!gms;
 
     ### URL。Hiki の記法を採用。
-    s!\[\[(.+?)\s*\|\s*(.+?)\]\]!get_link_str($1, $2)!gmse;
+    s!\[\[(.+?)\s*\|\s*(.+?)\]\]!get_link_str($1, $2, $ymd, $i)!gmse;
 
     ### 表。Hiki の記法を採用。
     s!(^(\|\|[^\n]+\n)+)!'<table><tr>'.
@@ -1053,13 +1053,13 @@ CAL
 
 ### anchor, img タグ文字列を生成。
 sub get_link_str {
-    my ($a, $b) = @_;
+    my ($a, $b, $ymd, $i) = @_;
     if ($a =~ /\.(jpg|jpeg|png|gif)$/i) { # [[http://nais.to/|image/nais.jpg]]
-	return qq(<a href="$b"><img src="$a" alt="画像"></a>);
-    } elsif ($b =~ /\.(jpg|jpeg|png|gif)$/i) { # [[自画像|image/sp.jpg]]
-	return qq(<img src="$b" alt="$a">);
+		return qq(<a href="$b" class="lightbox" rel="lightbox[id-$ymd-$i]"><img src="$a" class="lightbox" alt="クリックして拡大" /></a>);
+	} elsif ($b =~ /\.(jpg|jpeg|png|gif)$/i) { # [[自画像|image/sp.jpg]]
+		return qq(<a href="$b" class="lightbox" rel="lightbox[id-$ymd-$i]"><img src="$b" class="lightbox" alt="$a" /></a>);
     } else {			# [[トップページ|http://nais.to/]]
-	return qq(<a href="$b">$a</a>);
+		return qq(<a href="$b">$a</a>);
     }
 }
 
