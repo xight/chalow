@@ -554,7 +554,13 @@ sub okikae {
     s!^\-\-\- (.*)\n!<h4>$1</h4>!gm;
     unescape_string(\$_);	# プラグイン呼び出しも行なう
 
-    s!</pre><br>!</pre>!g;	# ad hoc
+    s!</pre><br />!</pre>!g;	# ad hoc
+    s!<br />\n</blockquote>!</blockquote>!g;	# ad hoc
+    s!<br />\n</pre>!</pre>!g;	# ad hoc
+
+	# <pre><div class="code">の後の空行対策
+	s!</pre></div><p><br />(\n<br />)*!</pre></div><p>!g;
+	s!<p></p>!!g;
 
     return $_;
 }
