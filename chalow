@@ -8,10 +8,20 @@
 #
 # chalow ホームページ: http://chalow.org/
 use strict;
+
+use local::lib 'vendor';
 use Getopt::Long;
 use POSIX qw(strftime ceil);
 use Time::Local;		# for 曜日
 use HTML::Template;
+
+use HTTP::Request::Common qw(POST);
+use LWP::UserAgent;
+use Data::Dumper;
+
+use URI;
+use Jcode;
+
 use ChangeLogReader;
 
 my $version = '1.0';
@@ -552,6 +562,7 @@ sub okikae {
     s!^\-\- (.*)\n!<h3>$1</h3>!gm;
 	# --- subtitle を <h4>subtitle</h4> に
     s!^\-\-\- (.*)\n!<h4>$1</h4>!gm;
+
     unescape_string(\$_);	# プラグイン呼び出しも行なう
 
     s!</pre><br />!</pre>!g;	# ad hoc
@@ -606,14 +617,14 @@ sub make_item_html {
     $t->param(ymd => $ymd);
     my $this_item = $t->output();
 
-    if ($output_cat_pages == 1) { # カテゴリ別ページを出すときの処理
-	my $ent_h = make_entry_header_html($e->{eh}, $ymd);
-	foreach (@{$e->{$i}{cat}}) {
-	    # カテゴリ別ページは --stop-date と相性が悪いので注意
-	    push @{$category_item{$_}}, {eh=>$ent_h, cont=>$this_item};
+	if ($output_cat_pages == 1) { # カテゴリ別ページを出すときの処理
+		my $ent_h = make_entry_header_html($e->{eh}, $ymd);
+		foreach (@{$e->{$i}{cat}}) {
+			# カテゴリ別ページは --stop-date と相性が悪いので注意
+			push @{$category_item{$_}}, {eh=>$ent_h, cont=>$this_item};
+		}
 	}
-    }
-    return $this_item;
+	return $this_item;
 }
 
 
@@ -627,22 +638,21 @@ sub make_entry_html {
     my ($y, $m, $d) = ($ymd =~ /^(\d{4})-(\d\d)-(\d\d)$/);
 
     ### 他の年の同じ日付 (月日) へのリンクを張る
-    my @same_dates;
-    if ($same_date_jump == 1) {
-	if (defined $cl->{STAT}->{md}{"$m-$d"}) {
-	    my @ys = sort keys %{$cl->{STAT}->{md}{"$m-$d"}};
-	    @same_dates = map {"<a href=\"".datestr2url("$_-$m-$d").
-				   "\">$_</a>"} grep {$_ != $y} @ys;
+	my @same_dates;
+	if ($same_date_jump == 1) {
+		if (defined $cl->{STAT}->{md}{"$m-$d"}) {
+			my @ys = sort keys %{$cl->{STAT}->{md}{"$m-$d"}};
+			@same_dates = map {"<a href=\"".datestr2url("$_-$m-$d").
+			"\">$_</a>"} grep {$_ != $y} @ys;
+		}
 	}
-    }
 
-    ### 日付リンクによるリファラー
+	### 日付リンクによるリファラー
     my @inside_refs = get_inside_ref("$ymd");
 
     ### entry の基礎情報
     my $entry_url = datestr2url($ymd);
     my $entry_ymd = $ymd;
-#    my $entry_id = $ymd; $entry_id =~ s/-//g; # Ex. "20030924"
     (my $entry_id = $ymd) =~ s/-//g; # Ex. "20030924"
 
     ### エントリの組み上げ
@@ -806,6 +816,7 @@ sub write_item_page {
 
 	    $t->param(header_text_before => $header_text_before);
 	    $t->param(header_text_after => $header_text_after);
+
 	    $t->param(header => $item->{h});
 	    $t->param(cat => $catstr);
 	    $t->param(author => $item->{a});
@@ -1307,8 +1318,23 @@ my %escaped_src;
 my $num_of_escaped_plugin;
 my %escaped_plugin;
 
+### GeSHi 用
+my $geshi_flag = 0;
+my %geshi_lang;
+my $num_of_escaped_src_geshi;
+my %escaped_src_geshi;
+
 sub escape_string {
     my ($strp) = @_;
+
+    ### ソースエスケープ - GeSHi
+    $num_of_escaped_src_geshi = 0;
+    $$strp =~ s!\[src:([^\]]+?)\](.*?)\[/src\]!
+	$geshi_flag = 1,
+    $num_of_escaped_src_geshi++;
+ 	$geshi_lang{$num_of_escaped_src_geshi} = $1,
+ 	$escaped_src_geshi{$num_of_escaped_src_geshi} = $2,
+	sprintf("\x4\x13%d\x3", $num_of_escaped_src_geshi)!gsmxe;
 
     ### HTML エスケープ - 文字列そのまま
     my $btag = '_HTML_START_\n'; # 開始マーク
@@ -1335,16 +1361,67 @@ sub escape_string {
     $$strp =~ s!{{(.*?)}}!
 	$escaped_plugin{++$num_of_escaped_plugin} = $1,
 	sprintf("\x7\x13%d\x3", $num_of_escaped_plugin)!gsmxe;
+
+}
+
+sub geshi {
+    my ($lang,$source) = @_;
+
+	my $geshi_uri = q(http://geshi.local:8000);
+	my $ua		= LWP::UserAgent->new;
+
+	my $req		= POST $geshi_uri, [lang => $lang, source=>$source];
+	my $result	= $ua->request($req)->as_string;
+	#print Dumper($result); exit;
+
+	my @arr = split(/\n/,$result);
+	my $flag = 0;
+	my $ret = '';
+	foreach (@arr){
+		chomp;
+		if (/^$/){
+			$flag = 1;
+		}
+		if ($flag){
+			$ret .= $_."\n";
+		}
+	}
+	$ret =~ s/\n+$//;
+	$ret = '<div class="code" title="'.$lang.' code">'.$ret.'</div>';
+	return $ret;
 }
 
 sub unescape_string {
     my ($strp) = @_;
 
+    ### ソースアンエスケープ - GeSHi 追加
+	if ($geshi_flag == 1){
+		my %geshi_source;
+		foreach my $k (keys %escaped_src_geshi){
+			my $lang	= $geshi_lang{$k};
+			my $source	= $escaped_src_geshi{$k};
+			$source =~s/^\n//;
+			$source =~s/\n$//;
+			#print "Lang : $lang\n";
+			#print "Source:\n$source\n";
+			$geshi_source{$k} = &geshi($lang,$source);
+		}
+		# $$strp =~ s|\x4\x13(\d+)\x3|$escaped_src_geshi{$1}|gsmxe;
+		$$strp =~ s!\x4\x13(\d+)\x3!$geshi_source{$1}!gsmxe;
+
+		# $$strp = qq(</p>$ret<p>);
+		#print "Return:\n$$strp\n";
+
+		$geshi_flag = 0;
+		%escaped_src_geshi = ();
+	}
+
     ### プラグインアンエスケープ - 実行！
     $$strp =~ s|\x7\x13(\d+)\x3|eval($escaped_plugin{$1})|ge;
+
     ### ソースアンエスケープ - pre 追加
-	#$$strp =~ s|\x6\x13(\d+)\x3|<pre>$escaped_src{$1}</pre>|g;
-	$$strp =~ s|\x6\x13(\d+)\x3|</p><pre>$escaped_src{$1}</pre><p>|g;
+	$$strp =~ s|\x6\x13(\d+)\x3|</p><div class="code"><pre>$escaped_src{$1}</pre></div><p>|g;
+
 	### HTML アンエスケープ
 	$$strp =~ s|\x5\x13(\d+)\x3|$escaped_string{$1}|g;
 }
