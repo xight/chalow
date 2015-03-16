@@ -1343,10 +1343,10 @@ sub unescape_string {
     ### プラグインアンエスケープ - 実行！
     $$strp =~ s|\x7\x13(\d+)\x3|eval($escaped_plugin{$1})|ge;
     ### ソースアンエスケープ - pre 追加
-    #$$strp =~ s|\x6\x13(\d+)\x3|<pre>$escaped_src{$1}</pre>|g;
-    $$strp =~ s|\x6\x13(\d+)\x3|</p><pre>$escaped_src{$1}</pre><p>|g;
-    ### HTML アンエスケープ
-    $$strp =~ s|\x5\x13(\d+)\x3|$escaped_string{$1}|g;
+	#$$strp =~ s|\x6\x13(\d+)\x3|<pre>$escaped_src{$1}</pre>|g;
+	$$strp =~ s|\x6\x13(\d+)\x3|</p><pre>$escaped_src{$1}</pre><p>|g;
+	### HTML アンエスケープ
+	$$strp =~ s|\x5\x13(\d+)\x3|$escaped_string{$1}|g;
 }
 
 
@@ -1355,8 +1355,8 @@ sub get_inside_ref {
     my ($id) = @_;
     if (defined $inside_ref{"$id"}) {
         return map {datestr2anchor("[".$_."]")} 
-	(sort {$b cmp $a} keys %{$inside_ref{"$id"}});
-    }
+		(sort {$b cmp $a} keys %{$inside_ref{"$id"}});
+	}
     return ();
 }
 
@@ -1367,7 +1367,7 @@ sub get_category_filename {
     to_utf8_cl(\$cn) if (not $utf8_mode and $cn =~ /[\x80-\xff]/);
     $cn =~ s/([^0-9a-z_-])/unpack('H2', $1)/gei;
     $cn =~ tr/A-Z/a-z/;
-    return "cat_$cn.html";
+    return "category-$cn.html";
 }
 
 
@@ -1378,7 +1378,7 @@ sub make_entry_header_html {
 	# 曜日(Mon, Tue, ...)を追加: "2000-10-19" --> "2000-10-19 Thu"
 	$eh .= " ".get_day_of_week($ymd);
     }
-    return qq(<a name="$ymd" href="@{[datestr2url($ymd)]}">$eh</a>);
+    return qq(<a id="id-$ymd" href="@{[datestr2url($ymd)]}">$eh</a>);
 }
 
 
