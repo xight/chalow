@@ -1318,23 +1318,23 @@ my %escaped_src;
 my $num_of_escaped_plugin;
 my %escaped_plugin;
 
-### GeSHi 用
-my $geshi_flag = 0;
-my %geshi_lang;
-my $num_of_escaped_src_geshi;
-my %escaped_src_geshi;
+### source_highlight 用
+my $source_highlight_flag = 0;
+my %source_highlight_lang;
+my $num_of_escaped_source_highlight;
+my %escaped_source_highlight;
 
 sub escape_string {
     my ($strp) = @_;
 
-    ### ソースエスケープ - GeSHi
-    $num_of_escaped_src_geshi = 0;
+    ### ソースエスケープ - source_highlight
+    $num_of_escaped_source_highlight = 0;
     $$strp =~ s!\[src:([^\]]+?)\](.*?)\[/src\]!
-	$geshi_flag = 1,
-    $num_of_escaped_src_geshi++;
- 	$geshi_lang{$num_of_escaped_src_geshi} = $1,
- 	$escaped_src_geshi{$num_of_escaped_src_geshi} = $2,
-	sprintf("\x4\x13%d\x3", $num_of_escaped_src_geshi)!gsmxe;
+	$source_highlight_flag = 1,
+    $num_of_escaped_source_highlight++;
+ 	$source_highlight_lang{$num_of_escaped_source_highlight} = $1,
+ 	$escaped_source_highlight{$num_of_escaped_source_highlight} = $2,
+	sprintf("\x4\x13%d\x3", $num_of_escaped_source_highlight)!gsmxe;
 
     ### HTML エスケープ - 文字列そのまま
     my $btag = '_HTML_START_\n'; # 開始マーク
@@ -1364,56 +1364,28 @@ sub escape_string {
 
 }
 
-sub geshi {
+sub source_highlight {
     my ($lang,$source) = @_;
-
-	my $geshi_uri = q(http://geshi.local:8000);
-	my $ua		= LWP::UserAgent->new;
-
-	my $req		= POST $geshi_uri, [lang => $lang, source=>$source];
-	my $result	= $ua->request($req)->as_string;
-	#print Dumper($result); exit;
-
-	my @arr = split(/\n/,$result);
-	my $flag = 0;
-	my $ret = '';
-	foreach (@arr){
-		chomp;
-		if (/^$/){
-			$flag = 1;
-		}
-		if ($flag){
-			$ret .= $_."\n";
-		}
-	}
-	$ret =~ s/\n+$//;
-	$ret = '<div class="code" title="'.$lang.' code">'.$ret.'</div>';
-	return $ret;
+	my $ret = qq(<pre><code class="$lang">$source</code></pre>);
 }
 
 sub unescape_string {
     my ($strp) = @_;
 
-    ### ソースアンエスケープ - GeSHi 追加
-	if ($geshi_flag == 1){
-		my %geshi_source;
-		foreach my $k (keys %escaped_src_geshi){
-			my $lang	= $geshi_lang{$k};
-			my $source	= $escaped_src_geshi{$k};
+    ### ソースアンエスケープ - source_highlight 追加
+	if ($source_highlight_flag == 1){
+		my %source_highlight_source;
+		foreach my $k (keys %escaped_source_highlight){
+			my $lang	= $source_highlight_lang{$k};
+			my $source	= $escaped_source_highlight{$k};
 			$source =~s/^\n//;
 			$source =~s/\n$//;
-			#print "Lang : $lang\n";
-			#print "Source:\n$source\n";
-			$geshi_source{$k} = &geshi($lang,$source);
+			$source_highlight_source{$k} = &source_highlight($lang,$source);
 		}
-		# $$strp =~ s|\x4\x13(\d+)\x3|$escaped_src_geshi{$1}|gsmxe;
-		$$strp =~ s!\x4\x13(\d+)\x3!$geshi_source{$1}!gsmxe;
+		$$strp =~ s!\x4\x13(\d+)\x3!$source_highlight_source{$1}!gsmxe;
 
-		# $$strp = qq(</p>$ret<p>);
-		#print "Return:\n$$strp\n";
-
-		$geshi_flag = 0;
-		%escaped_src_geshi = ();
+		$source_highlight_flag = 0;
+		%escaped_source_highlight = ();
 	}
 
     ### プラグインアンエスケープ - 実行！
