@@ -603,6 +603,7 @@ sub make_item_html {
     $t->param(ymdi => $item_ymdi);
     $t->param(url => $item_url);
     $t->param(rss_file => $rss_filename); # 050821
+    $t->param(ymd => $ymd);
     my $this_item = $t->output();
 
     if ($output_cat_pages == 1) { # カテゴリ別ページを出すときの処理
@@ -695,7 +696,7 @@ sub write_category_page {
             $t->param(day_list => $current_day_list);
             $t->param(latest_item_list => $latest_item_list);
             $t->param(category_list => $category_list);
-	    $t->param(rss_file => $rss_filename); # 050821
+			$t->param(rss_file => $rss_filename); # 050821
             $t->param(entries => [grep /^.+$/, @ents[$i*$n...($i+1)*$n-1]]);
 
             my @page_list;
@@ -703,17 +704,25 @@ sub write_category_page {
             my $next_page_url;
             if ($num_of_old_pages > 0) {
                 for (my $j = 0; $j <= $num_of_old_pages; $j++) {
-                    $page_list[$j] = ($i == $j) ? $j+1 : 
-                        qq(<a href="$fnames[$j]">@{[$j+1]}</a>);
+					my $temp = $fnames[$j];
+					$temp =~ s/\.html$//;
+					my $page_num_temp = $j + 1;
+                    $page_list[$j] = ($i == $j) ? qq(<li><em>$page_num_temp</em></li>) : qq(<li><a href="$temp">@{[$page_num_temp]}</a></li>);
                     $back_page_url = $fnames[$j] if ($j == $i - 1);
                     $next_page_url = $fnames[$j] if ($j == $i + 1);
                 }
             }
 
             $t->param(page_list => join(" ",@page_list));
-            $t->param(first_page => $fnames[0]);
-            $t->param(back => $back_page_url);
-            $t->param(next => $next_page_url);
+			my $first_page_url = $fnames[0];
+			$first_page_url =~ s/\.html$//;
+			my $back_page_url2 = $back_page_url;
+			$back_page_url2 =~ s/\.html$//;
+			my $next_page_url2 = $next_page_url;
+			$next_page_url2 =~ s/\.html$//;
+            $t->param(first_page => $first_page_url);
+            $t->param(back => $back_page_url2);
+            $t->param(next => $next_page_url2);
             $t->param(page_id => $i + 1);
             $t->param(page_num => $num_of_old_pages + 1);
 
