@@ -1167,36 +1167,33 @@ sub write_latest_item_list_file {
     my @lines;
     my $date;
     my $ctr = $latest_titles_num;
-    foreach my $ymd (sort {$b cmp $a} keys %{$cl->{all}}) {
-	$ctr--;
-	last if ($ctr < 0);
-	my $e = $cl->{all}->{$ymd};
-	foreach my $i (sort {$b <=> $a} keys %$e) {
-	    next if ($i !~ /^\d/);
-	    my ($ym) = ($ymd =~ /^(\d{4}-\d\d)-\d\d/);
-	    my $c = $e->{$i}{h};
-            $c =~ s/[\t\n]//g;
-	    $c =~ s/\s\s+/ /g;
-	    $c =~ s/\s*$//;
-            $c =~ s/<.+?>//g;
-	    $c =~ s/^\*\s+//;
-#	    $c =~ s/\'/&\#x27;/g;
+	push @lines, "<ul>";
+	foreach my $ymd (sort {$b cmp $a} keys %{$cl->{all}}) {
+		$ctr--;
+		last if ($ctr < 0);
+		my $e = $cl->{all}->{$ymd};
+		foreach my $i (sort {$b <=> $a} keys %$e) {
+			next if ($i !~ /^\d/);
+			my ($ym) = ($ymd =~ /^(\d{4}-\d\d)-\d\d/);
+			my $c = $e->{$i}{h};
+			$c =~ s/[\t\n]//g;
+			$c =~ s/\s\s+/ /g;
+			$c =~ s/\s*$//;
+			$c =~ s/<.+?>//g;
+			$c =~ s/^\*\s+//;
+#			$c =~ s/\'/&\#x27;/g;
 
-	    if ($date ne $ymd) {
-		push @lines, "<a href=\"".
-		    $clog_url_pref.datestr2url("$ymd")."\">$ymd</a><br>";
-		$date = $ymd;
-	    }
-	    push @lines, "- <a href=\"".
-		$clog_url_pref.datestr2url("$ymd-$i")."\">$c</a><br>";
+			push @lines, "<li>$ymd :<br /><a href=\"".
+			$clog_url_pref.datestr2url("$ymd-$i")."\">$c</a></li>";
+		}
 	}
-    }
+	push @lines, "</ul>";
 
-    my $ostr = join("\n", map {s/\'/&\#x27;/g; "document.writeln('".$_."');"}
-		    @lines);
-    output_to_file("$outputdir/cl.js", \$ostr);
+	my $ostr = join("\n", map {s/\'/&\#x27;/g; "document.writeln('".$_."');"}
+		@lines);
+	output_to_file("$outputdir/recent-posts.js", \$ostr);
 
-    $latest_item_list = join("\n", @lines);
+	$latest_item_list = join("\n", @lines);
 
 }
 
@@ -1207,18 +1204,18 @@ sub write_category_list_file {
 #    return if ($output_cat_pages == 0);
 
     my @lines = ();
-    foreach my $cat (sort keys %{$cl->{CAT}}) {
-	my $n = $cl->{CAT}->{$cat};
-	my $url;
-	if ($output_cat_pages) {
-	    $url = get_category_filename($cat);
-	    $url = $clog_url_pref.$url;
-	} else {
-	    $url = $cat_page_cgi;
-	    $url =~ s/%%CAT%%/urlencode($cat)/ge;
-	    $url = $clog_url_pref.$url if ($url !~ /^http/);
-	}
-	push @lines, "- <a href=\"$url\">$cat</a> ($n)<br>";
+	foreach my $cat (sort keys %{$cl->{CAT}}) {
+		my $n = $cl->{CAT}->{$cat};
+		my $url;
+		if ($output_cat_pages) {
+			$url = get_category_filename($cat);
+			$url = $clog_url_pref.$url;
+		} else {
+			$url = $cat_page_cgi;
+			$url =~ s/%%CAT%%/urlencode($cat)/ge;
+			$url = $clog_url_pref.$url if ($url !~ /^http/);
+		}
+		push @lines, "- <a href=\"$url\">$cat</a> ($n)<br>";
     }
 
     my $ostr = join("\n", map {s/\'/&\#x27;/g; "document.writeln('".$_."');"}
