@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # $Id: chalow,v 1.1 2007-10-19 22:07:25+09 tatsuoyamashita Exp tatsuoyamashita $
 #
 # chalow - CHAngeLog On the Web - convert ChangeLog to HTML files
@@ -492,9 +492,9 @@ sub okikae {
     s!^$readmore_tag$(.*)$!<div class="readmore">$1</div>!sm;
 
     ### 文字修飾と水平線。Hiki の記法を採用。
-    s!'''(.+?)'''!<strong>$1</strong>!gms;
-    s!''(.+?)''!<em>$1</em>!gms;
-    s!==(\S.+?)==!<s>$1</s>!gms;
+	#s!'''(.+?)'''!<strong>$1</strong>!gms;
+	#s!''(.+?)''!<em>$1</em>!gms;
+	#s!==(\S.+?)==!<s>$1</s>!gms;
     s!^\-{4}!<hr>!gms;
 
     ### URL。Hiki の記法を採用。
@@ -512,8 +512,7 @@ sub okikae {
     ### 引用 (quote): "| ..." か "> ..."
     if ($remove_quote_mark == 1) {
 		my $a;
-		s!((^((\||>)[^\n]*)\n)+)!'<blockquote>'.($a = $1,
-	    $a =~ s{^(\||>)\s?}{}gm, $a).'</blockquote>'!gme;
+		s!((^((\||>)[^\n]*)\n)+)!'<blockquote>'.($a = $1, $a =~ s{^(\||>)\s?}{}gm, $a).'</blockquote>'!gme;
     } else {
 		s!((^((\||>)[^\n]*)\n)+)!<blockquote>$1</blockquote>!gmx;
     }
