@@ -1275,27 +1275,27 @@ sub write_itemlist_file {
 sub datestr2anchor {
     my ($d) = @_;
     if ($page_mode == 2) {	# アイテムモード
-	$d =~ s!\[(\d{4}-\d\d-\d\d(-\d+)?)\]!<a href="$1.html">[$1]</a>!g;
-    } elsif ($day_page_mode or $page_mode == 1) { # 日モード
-	$d =~ s!\[((\d{4}-\d\d-\d\d)(-\d+)?)\]!<a href="$2.html#$1">[$1]</a>!g;
-    } else {			# 月モード
-	$d =~ s!\[((\d{4}-\d\d)-\d\d(-\d+)?)\]!<a href="$2.html#$1">[$1]</a>!g;
-    }
-    return $d;
+		$d =~ s!\[(\d{4}-\d\d-\d\d(-\d+)?)\]!<a href="$1">[$1]</a>!g;
+	} elsif ($day_page_mode or $page_mode == 1) { # 日モード
+		$d =~ s!\[((\d{4}-\d\d-\d\d)(-\d+)?)\]!<a href="$2#id-$1">[$1]</a>!g;
+	} else {			# 月モード
+		$d =~ s!\[((\d{4}-\d\d)-\d\d(-\d+)?)\]!<a href="$2#id-$1">[$1]</a>!g;
+	}
+	return $d;
 }
 
 sub datestr2url {
     my ($d) = @_;
-    if ($page_mode == 2) {	# アイテムモード
-	$d =~ s!(\d{4}-\d\d-\d\d(-\d+)?)!$1.html!;
-    } elsif ($day_page_mode or $page_mode ==1) { # 日モード
-	unless ($d =~ s!((\d{4}-\d\d-\d\d)-\d+)!$2.html\#$1!) {
-	    $d =~ s!(\d{4}-\d\d-\d\d)!$1.html!;
+	if ($page_mode == 2) {	# アイテムモード
+		$d =~ s!(\d{4}-\d\d-\d\d(-\d+)?)!$1!;
+	} elsif ($day_page_mode or $page_mode ==1) { # 日モード
+		unless ($d =~ s!((\d{4}-\d\d-\d\d)-\d+)!$2.html\#id-$1!) {
+			$d =~ s!(\d{4}-\d\d-\d\d)!$1!;
+		}
+	} else {			# 月モード
+		$d =~ s!((\d{4}-\d\d)-\d\d(-\d+)?)!$2#id-$1!;
 	}
-    } else {			# 月モード
-	$d =~ s!((\d{4}-\d\d)-\d\d(-\d+)?)!$2.html#$1!;
-    }
-    return $d;
+	return $d;
 }
 
 
