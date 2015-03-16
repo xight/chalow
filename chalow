@@ -1285,7 +1285,7 @@ sub datestr2anchor {
 }
 
 sub datestr2url {
-    my ($d) = @_;
+	my ($d) = @_;
 	if ($page_mode == 2) {	# アイテムモード
 		$d =~ s!(\d{4}-\d\d-\d\d(-\d+)?)!$1!;
 	} elsif ($day_page_mode or $page_mode ==1) { # 日モード
@@ -1354,7 +1354,7 @@ sub unescape_string {
 sub get_inside_ref {
     my ($id) = @_;
     if (defined $inside_ref{"$id"}) {
-        return map {datestr2anchor("[".$_."]")} 
+		return map {datestr2anchor("[".$_."]")} 
 		(sort {$b cmp $a} keys %{$inside_ref{"$id"}});
 	}
     return ();
@@ -1412,10 +1412,12 @@ sub make_cat_link_html {
     my $catstr;
     if (defined $catp) {
 	if ($output_cat_pages) {
-	    $catstr = 
-		join("", map 
-		     {"[<a href=\"".get_category_filename($_)."\">$_</a>]"}
-		     @$catp);
+		$catstr = join(q(<span class="sep">, </span>), map {
+			my $temp_category_name = $_;
+			my $temp_file_name     = get_category_filename($_);
+			$temp_file_name =~ s/\.html$//;
+			"<a href=\"".$temp_file_name."\" rel=\"tag\">$temp_category_name</a>";
+		} @$catp);
 	} elsif ($cat_page_cgi eq "") {
 	    $catstr = join("", map {"[".$_."]"} @$catp);
 	} else {
