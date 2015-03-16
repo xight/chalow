@@ -1349,7 +1349,7 @@ sub escape_string {
 
     ### ソースエスケープ - "&" や "<" などを置換し pre を付ける
     $num_of_escaped_src = 0;
-    $$strp =~ s!\[src\](.*?)\[/src\]!
+    $$strp =~ s!\[src\]\n(.*?)\n\[/src\]!
 	$escaped_src{++$num_of_escaped_src} = $1,
 	$escaped_src{$num_of_escaped_src} =~ s/&/&amp;/g,
 	$escaped_src{$num_of_escaped_src} =~ s/</&lt;/g,
@@ -1400,7 +1400,6 @@ sub unescape_string {
 	### HTML アンエスケープ
 	$$strp =~ s|\x5\x13(\d+)\x3|$escaped_string{$1}|g;
 }
-
 
 ### inside referrer のリンク作成
 sub get_inside_ref {
