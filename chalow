@@ -1386,18 +1386,17 @@ sub make_entry_header_html {
 sub make_item_header_html {
     my ($ih, $ymdi) = @_;
     # 前に足すもの
-    my $ihb = "";
-    if ($item_header_style == 0 or $item_header_style == 1) {
-	$ihb = $item_header_mark;
-	if ($use_item_anchor == 1) {
-	    my $day_url = datestr2url($ymdi);
-	    $ihb = qq(<a name="$ymdi" href="$day_url">$ihb</a>);
+	my $ihb = "";
+	if ($item_header_style == 0 or $item_header_style == 1) {
+		$ihb = $item_header_mark;
+		if ($use_item_anchor == 1) {
+			my $day_url = datestr2url($ymdi);
+			$ihb = qq(<a id="id-$ymdi" href="$day_url">$ihb</a>);
+		}
+		$ihb .= " ";
 	}
-	$ihb .= " ";
-    }
 
-    # タグで囲む
-    $ih = qq($ihb<span class="clitemheader">$ih</span>);
+	$ih = qq($ihb).qq($ih);
     # 後ろに足すもの
     if ($item_header_style == 0 or $item_header_style == 2) {
 	$ih .= ":";
