@@ -15,8 +15,6 @@ use POSIX qw(strftime ceil);
 use Time::Local;		# for 曜日
 use HTML::Template;
 
-use HTTP::Request::Common qw(POST);
-use LWP::UserAgent;
 use Data::Dumper;
 
 use URI;
