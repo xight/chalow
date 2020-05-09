@@ -20,6 +20,9 @@ use Data::Dumper;
 use URI;
 use Jcode;
 
+use Cwd 'abs_path';
+use File::Basename;
+use lib dirname( abs_path $0 );
 use ChangeLogReader;
 
 my $version = '1.0';
@@ -1356,7 +1359,7 @@ sub escape_string {
 
     ### プラグインエスケープ
     $num_of_escaped_plugin = 0;
-    $$strp =~ s!{{(.*?)}}!
+    $$strp =~ s!\{\{(.*?)\}\}!
 	$escaped_plugin{++$num_of_escaped_plugin} = $1,
 	sprintf("\x7\x13%d\x3", $num_of_escaped_plugin)!gsmxe;
 
