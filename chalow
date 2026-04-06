@@ -8,8 +8,11 @@
 #
 # chalow ホームページ: http://chalow.org/
 use strict;
+#use warnings;
+#
+use FindBin;
+use lib "$FindBin::Bin/local/lib/perl5";
 
-use local::lib 'vendor';
 use Getopt::Long;
 use POSIX qw(strftime ceil);
 use Time::Local;		# for 曜日
@@ -20,6 +23,10 @@ use Data::Dumper;
 use URI;
 use Jcode;
 
+use Cwd 'abs_path';
+use File::Basename;
+
+use lib dirname( abs_path $0 );
 use ChangeLogReader;
 
 my $version = '1.0';
@@ -50,6 +57,10 @@ s!(</blockquote>)!</p>$1<p>!g;
 my $css_file;
 # RSSファイル名
 my $rss_filename = "cl.rdf";
+
+# 最終更新日
+my $lastupdate_filename = "lastupdate.js";
+
 # RSSに最近何日分表示するか(0の場合は $opt_topn と同じ)
 my $rss_topn = 0;
 # インデックスページ(index.html)で最近何日分を表示するか
@@ -73,7 +84,7 @@ my $index_page_template = << "___INDEX_PAGE_TEMPLATE"
 <a href="<TMPL_VAR name=rss_file>">RSS</a>
 <h1><a href="index.html"><TMPL_VAR name=cl_name></a></h1>
 <p class="calendar"><TMPL_VAR name=ym> / <TMPL_VAR name=day_list></p>
-<p>last update: <TMPL_VAR name=lastupdate></p>
+<p>last update: <script type="text/javascript" src="/<TMPL_VAR name=lastupdate_filename>"></script></p>
 <p class="calendar"><TMPL_VAR name=month_page_list></p>
 <p>recent <TMPL_VAR name=ndays> days</p>
 <TMPL_LOOP name=entries><TMPL_VAR name=content></TMPL_LOOP>
@@ -99,7 +110,7 @@ my $month_page_template = << "___MONTH_PAGE_TEMPLATE"
 <p class="calendar"><TMPL_VAR name=day_list></p>
 <p class="calendar"><TMPL_VAR name=month_page_list></p>
 <TMPL_LOOP name=entries><TMPL_VAR name=content></TMPL_LOOP>
-<p>last update: <TMPL_VAR name=lastupdate></p>
+<p>last update: <script type="text/javascript" src="/<TMPL_VAR name=lastupdate_filename>"></script></p>
 <TMPL_VAR name=signature>
 </div></body></html>
 ___MONTH_PAGE_TEMPLATE
@@ -123,7 +134,7 @@ my $day_page_template = << "___DAY_PAGE_TEMPLATE"
 <p class="calendar"><a href="<TMPL_VAR name=ym>.html"><TMPL_VAR name=ym></a>
  / <TMPL_VAR name=day_list></p>
 <p class="calendar"><TMPL_VAR name=month_page_list></p>
-<p>last update: <TMPL_VAR name=lastupdate></p>
+<p>last update: <script type="text/javascript" src="/<TMPL_VAR name=lastupdate_filename>"></script></p>
 <TMPL_VAR name=signature>
 </div></body></html>
 ___DAY_PAGE_TEMPLATE
@@ -158,7 +169,7 @@ my $item_page_template = << "___PAGE_TEMPLATE"
 </div>
 <!-- end:<TMPL_VAR name=ymdi> -->
 </div></div>
-<!--<p>last update: <TMPL_VAR name=lastupdate></p>-->
+<p>last update: <script type="text/javascript" src="/<TMPL_VAR name=lastupdate_filename>"></script></p>
 <TMPL_VAR name=signature>
 </div></body></html>
 ___PAGE_TEMPLATE
@@ -183,7 +194,7 @@ my $cat_page_template = << "TMPL"
  <div class="day"><h2><span class="date"><TMPL_VAR name=eh></span></h2>
  <div class="body"><TMPL_VAR name=cont></div></div>
 </TMPL_LOOP>
-<p>last update: <TMPL_VAR name=lastupdate></p>
+<p>last update: <script type="text/javascript" src="/<TMPL_VAR name=lastupdate_filename>"></script></p>
 <TMPL_VAR name=signature>
 </div></body></html>
 TMPL
@@ -261,6 +272,12 @@ my $rss_template = << "RDFSTR"
 </TMPL_LOOP>
 </rdf:RDF>
 RDFSTR
+	;
+
+# 最終更新日ファイルのテンプレート
+my $lastupdate_template = << "___LASTUPDATESTR"
+document.writeln('<TMPL_VAR name=lastupdate>');
+___LASTUPDATESTR
 	;
 
 # 表示するとき引用記号 ('>' or '|') を消すか (1:YES, 0:NO)
@@ -435,6 +452,7 @@ write_rss_file() if ($output_rss); # RSS ファイルを作る
 write_itemlist_file() if ($output_itemlist); # 検索用ファイル(itemlist)を作る 
 write_latest_item_list_file();	# 最近の話題一覧を作る
 write_category_list_file();	# カテゴリ一覧を作る
+write_lastupdate_file(); # 最終更新日ファイルを作る
 
 ### HTML 生成のためのループ
 foreach my $ymd (sort keys %{$cl->{all}}) {
@@ -697,6 +715,7 @@ sub write_category_page {
             $t->param(cl_name => $changelog_name);
             $t->param(css_file => $css_file);
             $t->param(lastupdate => $what_time_is_it_now);
+            $t->param(lastupdate_file => $lastupdate_filename);
             $t->param(signature => $signature);
 
             $t->param(cat_name => $catname);
@@ -797,6 +816,7 @@ sub write_item_page {
 	    $t->param(cl_name => $changelog_name);
 	    $t->param(css_file => $css_file);
 	    $t->param(lastupdate => $what_time_is_it_now);
+		$t->param(lastupdate_file => $lastupdate_filename);
 	    $t->param(signature => $signature);
 
 	    $t->param(ymd => $ymd);
@@ -857,6 +877,7 @@ sub write_day_page {
 	$t->param(cl_name => $changelog_name);
 	$t->param(css_file => $css_file);
 	$t->param(lastupdate => $what_time_is_it_now);
+	$t->param(lastupdate_file => $lastupdate_filename);
 	$t->param(signature => $signature);
 
 	$t->param(ymd => $ymd);
@@ -909,6 +930,7 @@ sub write_month_page {
 	$t->param(cl_name => $changelog_name);
 	$t->param(css_file => $css_file);
 	$t->param(lastupdate => $what_time_is_it_now);
+	$t->param(lastupdate_file => $lastupdate_filename);
 	$t->param(signature => $signature);
 
 	$t->param(ym => $ym);
@@ -953,6 +975,7 @@ sub write_index_page {
     $t->param(cl_name => $changelog_name);
     $t->param(css_file => $css_file);
     $t->param(lastupdate => $what_time_is_it_now);
+	$t->param(lastupdate_file => $lastupdate_filename);
     $t->param(signature => $signature);
 
     $t->param(ymd => $ymd);	# 最新エントリの日付
@@ -1279,6 +1302,22 @@ sub write_itemlist_file {
     output_to_file("$outputdir/cl.itemlist", \$ostr);
 }
 
+### 最終更新日用ファイルを出力する
+sub write_lastupdate_file {
+
+	my $t = HTML::Template->new(scalarref => \$lastupdate_template,
+				loop_context_vars => 1,
+				die_on_bad_params => 0);
+
+
+	$t->param(lastupdate => $what_time_is_it_now);
+	my $ostr = $t->output();
+	### ファイルに出力
+	output_to_file("$outputdir/$lastupdate_filename", \$ostr);
+
+	print "${outputdir}/${lastupdate_filename} wrote.";
+	print "(Last Update: ${what_time_is_it_now})\n";
+}
 
 ### 日付で参照リンク
 sub datestr2anchor {
@@ -1356,7 +1395,7 @@ sub escape_string {
 
     ### プラグインエスケープ
     $num_of_escaped_plugin = 0;
-    $$strp =~ s!{{(.*?)}}!
+    $$strp =~ s!\{\{(.*?)\}\}!
 	$escaped_plugin{++$num_of_escaped_plugin} = $1,
 	sprintf("\x7\x13%d\x3", $num_of_escaped_plugin)!gsmxe;
 

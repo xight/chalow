@@ -10,6 +10,11 @@ CPANから入手してインストールしておいてください。
 * Jcode
 * HTML::Template
 
+'''
+% cpanm -L vendor Jcode
+% cpanm -L vendor HTML::Template
+'''
+
 # まずは、やってみよう!
 
 このファイルのあるディレクトリで、以下のコマンドを実行してみて下さい。
